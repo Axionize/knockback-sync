@@ -203,7 +203,7 @@ public class BukkitPlayer implements PlatformPlayer {
     public double getJumpPower() {
         double jumpVelocity = 0.42;
 
-        PotionEffect jumpEffect = bukkitPlayer.getPotionEffect(PotionEffectType.JUMP);
+        PotionEffect jumpEffect = bukkitPlayer.getPotionEffect(PotionEffectType.JUMP_BOOST);
         if (jumpEffect != null) {
             int amplifier = jumpEffect.getAmplifier();
             jumpVelocity += (amplifier + 1) * 0.1F;

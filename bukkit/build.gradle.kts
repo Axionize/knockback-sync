@@ -1,7 +1,13 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+version = "1.21.5"
 
 plugins {
     id("com.gradleup.shadow")
+}
+
+repositories {
+    mavenCentral()
+    maven("https://repo.codemc.io/repository/maven-snapshots/")
 }
 
 val shadePE: Boolean by rootProject.extra
@@ -31,7 +37,7 @@ tasks.named<JavaCompile>("compileTestJava") {
 dependencies {
     implementation(project(":common"))
 
-    compileOnly("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.5-R0.1-SNAPSHOT")
     compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
     compileOnly("io.netty:netty-all:4.1.72.Final")
 
@@ -40,9 +46,9 @@ dependencies {
 
     shadeThisThing(implementation("org.kohsuke:github-api:1.326")!!)
     if (shadePE) {
-        shadeThisThing(implementation("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")!!)
+        shadeThisThing(implementation("com.github.retrooper:packetevents-spigot:2.8.0-SNAPSHOT")!!)
     } else {
-        compileOnly("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")
+        compileOnly("com.github.retrooper:packetevents-spigot:2.8.0-SNAPSHOT")
     }
     shadeThisThing(implementation("org.incendo:cloud-paper:2.0.0-beta.10")!!)
     shadeThisThing(implementation("org.incendo:cloud-core:2.0.0")!!)

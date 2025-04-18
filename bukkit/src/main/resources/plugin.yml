@@ -1,5 +1,5 @@
 name: KnockbackSync
-version: ${version}
+version: 1.21.5
 main: me.caseload.knockbacksync.BukkitLoaderPlugin
 api-version: '1.13' # We actually support 1.12.2, api-version was added later though
 authors: [ Caseload, Axionize ]
