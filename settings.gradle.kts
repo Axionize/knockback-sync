@@ -7,6 +7,6 @@ pluginManagement {
     }
 }
 
-include("common", "bukkit")
+include("common", "fabric", "bukkit")
 
 rootProject.name = "KnockbackSync"
