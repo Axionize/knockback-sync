@@ -47,6 +47,8 @@ public class PlayerData {
     public static final long PING_OFFSET = 25;
 
     private static Field playerField;
+    @Getter @Setter
+    private boolean velocityGuard = false; // Used to prevent infinite recursion while setting velocity
 
     public final Queue<Pair<Integer, Long>> transactionsSent = new ConcurrentLinkedQueue<>();
     public final Queue<Pair<Long, Long>> keepaliveMap = new ConcurrentLinkedQueue<>();

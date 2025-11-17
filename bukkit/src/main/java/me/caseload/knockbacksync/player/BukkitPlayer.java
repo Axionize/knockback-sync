@@ -8,6 +8,7 @@ import com.github.retrooper.packetevents.util.Vector3d;
 import com.google.common.base.Preconditions;
 import me.caseload.knockbacksync.BukkitBase;
 import me.caseload.knockbacksync.Platform;
+import me.caseload.knockbacksync.manager.PlayerDataManager;
 import me.caseload.knockbacksync.world.FoliaWorld;
 import me.caseload.knockbacksync.world.PlatformWorld;
 import me.caseload.knockbacksync.world.SpigotWorld;
@@ -190,7 +191,24 @@ public class BukkitPlayer implements PlatformPlayer {
 
     @Override
     public void setVelocity(Vector3d adjustedVelocity) {
-        bukkitPlayer.setVelocity(new Vector(adjustedVelocity.x, adjustedVelocity.y, adjustedVelocity.z));
+        PlayerData data = PlayerDataManager.getPlayerData(this.getUser());
+
+        if(data == null){
+            // Fallback to normal behavior in the absence of a guard
+            bukkitPlayer.setVelocity(new Vector(adjustedVelocity.x, adjustedVelocity.y, adjustedVelocity.z));
+            return;
+        }
+
+        if(data.isVelocityGuard()){
+            return; // Already applying velocity
+        }
+
+        data.setVelocityGuard(true);
+        try {
+            this.bukkitPlayer.setVelocity(new Vector(adjustedVelocity.x, adjustedVelocity.y, adjustedVelocity.z));
+        } finally {
+            data.setVelocityGuard(false);
+        }
     }
 
     @Override

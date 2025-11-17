@@ -21,6 +21,9 @@ public abstract class PlayerKnockbackListener {
         PlayerData victimPlayerData = PlayerDataManager.getPlayerData(user);
         if (victimPlayerData == null)
             return;
+        if (victimPlayerData.isVelocityGuard()) { // Prevent velocity setter from looping infinitely
+            return;
+        }
 
         if (victimPlayerData.getNotNullPing() < PlayerData.PING_OFFSET)
             return;
@@ -50,6 +53,8 @@ public abstract class PlayerKnockbackListener {
         else
             return;
 
+        victimPlayerData.setVelocityGuard(true);;
         victim.setVelocity(adjustedVelocity);
+        victimPlayerData.setVelocityGuard(false);
     }
 }
