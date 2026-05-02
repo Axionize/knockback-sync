@@ -16,8 +16,15 @@ import org.bukkit.util.Vector;
 
 public class BukkitPlayerKnockbackListener extends PlayerKnockbackListener implements Listener {
 
+    // toggled from BukkitBase via prevent_velocity_event_recursion
+    public static boolean recursionGuardEnabled = false;
+    private boolean handling;
+
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerVelocity(PlayerVelocityEvent event) {
+        if (recursionGuardEnabled && handling)
+            return;
+
         Player victim = event.getPlayer();
         EntityDamageEvent entityDamageEvent = victim.getLastDamageCause();
         if (entityDamageEvent == null)
@@ -35,6 +42,11 @@ public class BukkitPlayerKnockbackListener extends PlayerKnockbackListener imple
             return;
 
         Vector vector = victim.getVelocity();
-        onPlayerVelocity(new BukkitPlayer(victim), new Vector3d(vector.getX(), vector.getY(), vector.getZ()));
+        handling = true;
+        try {
+            onPlayerVelocity(new BukkitPlayer(victim), new Vector3d(vector.getX(), vector.getY(), vector.getZ()));
+        } finally {
+            handling = false;
+        }
     }
 }

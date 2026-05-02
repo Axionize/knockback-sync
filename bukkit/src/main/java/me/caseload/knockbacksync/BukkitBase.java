@@ -77,6 +77,7 @@ public class BukkitBase extends Base {
         super.platformServer = new BukkitServer();
         super.pluginJarHashProvider = new PluginJarHashProvider(this.getClass().getProtectionDomain().getCodeSource().getLocation());
         this.playerUpdateInterval = this.getConfigManager().getConfigWrapper().getInt("entity_tick_intervals.player", VANILLA_PLAYER_UPDATE_INTERVAL);
+        BukkitPlayerKnockbackListener.recursionGuardEnabled = this.getConfigManager().getConfigWrapper().getBoolean("prevent_velocity_event_recursion", false);
 
         MethodHandle handle = null;
         try {
@@ -291,6 +292,7 @@ public class BukkitBase extends Base {
     @KBSyncEventHandler
     public void onConfigReload(ConfigReloadEvent event) {
         playerUpdateInterval = event.getConfigManager().getConfigWrapper().getInt("entity_tick_intervals.player", VANILLA_PLAYER_UPDATE_INTERVAL);
+        BukkitPlayerKnockbackListener.recursionGuardEnabled = event.getConfigManager().getConfigWrapper().getBoolean("prevent_velocity_event_recursion", false);
         applyUpdateIntervalsScheduling();
     }
 

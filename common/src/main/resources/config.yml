@@ -45,6 +45,9 @@ ping_strategy: "KEEPALIVE"
 # Whether to try to detect when player is offground and apply less kb
 enable_offground_synchronization: true
 
+# Enable if your server fork/plugin re-fires PlayerVelocityEvent during Player#setVelocity (prevents recursion crashes)
+prevent_velocity_event_recursion: false
+
 # This is the rate the server will use for (amongst other things) sending packets about entities to players
 # In other words it defines how often clients get updated velocity for other entities in the world
 # Note that certain events mark velocity as dirty and causes it to be immediately updated for 1 tick regardless of the tick interval
