@@ -40,9 +40,9 @@ dependencies {
 
     shadeThisThing(implementation("org.kohsuke:github-api:1.326")!!)
     if (shadePE) {
-        shadeThisThing(implementation("com.github.retrooper:packetevents-spigot:2.11.2")!!)
+        shadeThisThing(implementation("com.github.retrooper:packetevents-spigot:2.12.2+22c9961-SNAPSHOT")!!)
     } else {
-        compileOnly("com.github.retrooper:packetevents-spigot:2.11.2")
+        compileOnly("com.github.retrooper:packetevents-spigot:2.12.2+22c9961-SNAPSHOT")
     }
     shadeThisThing(implementation("org.incendo:cloud-paper:2.0.0-beta.14")!!)
     shadeThisThing(implementation("org.incendo:cloud-core:2.0.0")!!)
