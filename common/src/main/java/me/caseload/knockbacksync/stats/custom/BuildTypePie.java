@@ -8,6 +8,8 @@ import me.caseload.knockbacksync.stats.SimplePie;
 import org.kohsuke.github.GHAsset;
 import org.kohsuke.github.GHRelease;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.RateLimitHandler;
 
 import java.io.*;
 import java.net.URL;
@@ -52,7 +54,8 @@ public class BuildTypePie extends SimplePie {
     }
 
     private static void downloadBuildFiles() throws IOException {
-        GitHub gitHub = GitHub.connectAnonymously();
+        // FAIL instead of WAIT so we don't block shutdown when rate-limited
+        GitHub gitHub = new GitHubBuilder().withRateLimitHandler(RateLimitHandler.FAIL).build();
         GHRelease latestRelease = gitHub.getRepository(BuildConfig.GITHUB_REPO)
                 .getLatestRelease();
         List<GHAsset> assets = latestRelease.listAssets().toList();

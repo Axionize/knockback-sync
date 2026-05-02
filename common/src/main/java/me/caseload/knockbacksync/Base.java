@@ -24,6 +24,8 @@ import me.caseload.knockbacksync.stats.custom.StatsManager;
 import me.caseload.knockbacksync.world.PlatformServer;
 import org.incendo.cloud.CommandManager;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.RateLimitHandler;
 
 import java.io.DataInputStream;
 import java.io.File;
@@ -144,7 +146,8 @@ public abstract class Base {
 
         scheduler.runTaskAsynchronously(() -> {
             try {
-                GitHub github = GitHub.connectAnonymously();
+                // FAIL instead of WAIT so we don't block shutdown when rate-limited
+                GitHub github = new GitHubBuilder().withRateLimitHandler(RateLimitHandler.FAIL).build();
                 String latestVersion = github.getRepository("CASELOAD7000/knockback-sync")
                         .getLatestRelease()
                         .getTagName();

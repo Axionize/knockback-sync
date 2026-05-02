@@ -43,7 +43,12 @@ public abstract class PlayerKnockbackListener {
             if (damageTicks != null && damageTicks > 8)
                 return;
 
-            adjustedVelocity = velocity.withY(victimPlayerData.getVerticalVelocity()); // Should be impossible to produce a NPE in this context
+            // null when another plugin cancelled the damage event but the velocity event still fires
+            Double verticalVelocity = victimPlayerData.getVerticalVelocity();
+            if (verticalVelocity == null)
+                return;
+
+            adjustedVelocity = velocity.withY(verticalVelocity);
         }
         else if (victimPlayerData.isOffGroundSyncEnabled())
             adjustedVelocity = velocity.withY(victimPlayerData.getCompensatedOffGroundVelocity());

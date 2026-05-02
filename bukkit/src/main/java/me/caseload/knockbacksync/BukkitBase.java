@@ -10,6 +10,7 @@ import me.caseload.knockbacksync.listener.bukkit.*;
 import me.caseload.knockbacksync.manager.ConfigManager;
 import me.caseload.knockbacksync.permission.PermissionChecker;
 import me.caseload.knockbacksync.permission.PluginPermissionChecker;
+import me.caseload.knockbacksync.scheduler.AbstractTaskHandle;
 import me.caseload.knockbacksync.scheduler.BukkitSchedulerAdapter;
 import me.caseload.knockbacksync.scheduler.FoliaSchedulerAdapter;
 import me.caseload.knockbacksync.sender.BukkitPlayerSelectorParser;
@@ -52,7 +53,19 @@ public class BukkitBase extends Base {
     private final BukkitSenderFactory bukkitSenderFactory = new BukkitSenderFactory(this);
     private final PluginPermissionChecker permissionChecker = new PluginPermissionChecker();
 
+    private static final int VANILLA_PLAYER_UPDATE_INTERVAL = 2;
+
     private int playerUpdateInterval;
+    private AbstractTaskHandle updateIntervalsTask;
+
+    // resolved on first call, normalized via asType so invokeExact is a direct call
+    private MethodHandle getHandleMH;
+    private MethodHandle getChunkSourceMH;
+    private MethodHandle chunkMapGetterMH;
+    private MethodHandle entityMapGetterMH;
+    private MethodHandle serverEntityGetterMH;
+    private MethodHandle updateIntervalSetterMH;
+    private boolean updateIntervalsReflectionFailed;
 
     private final MethodHandle tickRateMethodHandle;
 
@@ -63,7 +76,7 @@ public class BukkitBase extends Base {
         super.statsManager = new BukkitStatsManager(plugin);
         super.platformServer = new BukkitServer();
         super.pluginJarHashProvider = new PluginJarHashProvider(this.getClass().getProtectionDomain().getCodeSource().getLocation());
-        this.playerUpdateInterval = this.getConfigManager().getConfigWrapper().getInt("entity_tick_intervals.player", 2);
+        this.playerUpdateInterval = this.getConfigManager().getConfigWrapper().getInt("entity_tick_intervals.player", VANILLA_PLAYER_UPDATE_INTERVAL);
 
         MethodHandle handle = null;
         try {
@@ -111,8 +124,19 @@ public class BukkitBase extends Base {
     public void enable() {
         super.enable();
         super.eventBus.registerListeners(this);
-        if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_20_5) && this.getPlatform() == Platform.BUKKIT) {
-            scheduler.runTaskTimerAsynchronously(this::setUpdateIntervals, 1, 1);
+        applyUpdateIntervalsScheduling();
+    }
+
+    private void applyUpdateIntervalsScheduling() {
+        boolean shouldRun = PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_20_5)
+                && this.getPlatform() == Platform.BUKKIT
+                && playerUpdateInterval != VANILLA_PLAYER_UPDATE_INTERVAL;
+
+        if (shouldRun && updateIntervalsTask == null) {
+            updateIntervalsTask = scheduler.runTaskTimer(this::setUpdateIntervals, 1, 1);
+        } else if (!shouldRun && updateIntervalsTask != null) {
+            updateIntervalsTask.cancel();
+            updateIntervalsTask = null;
         }
     }
 
@@ -204,44 +228,70 @@ public class BukkitBase extends Base {
     }
 
     public void setUpdateIntervals() {
+        if (updateIntervalsReflectionFailed)
+            return;
         try {
             for (World world : Bukkit.getWorlds()) {
-                Method getWorldHandleMethod = world.getClass().getMethod("getHandle");
-                Object serverLevel = getWorldHandleMethod.invoke(world);
+                if (getHandleMH == null)
+                    getHandleMH = unreflectVirtualAsObject(world.getClass().getMethod("getHandle"));
+                Object serverLevel = (Object) getHandleMH.invokeExact((Object) world);
 
-                // Get ChunkMap
-                Method getChunkSource = serverLevel.getClass().getMethod("getChunkSource");
-                Object chunkSource = getChunkSource.invoke(serverLevel);
-                Field chunkMapField = chunkSource.getClass().getDeclaredField("chunkMap");
-                chunkMapField.setAccessible(true);
-                Object chunkMap = chunkMapField.get(chunkSource);
+                if (getChunkSourceMH == null)
+                    getChunkSourceMH = unreflectVirtualAsObject(serverLevel.getClass().getMethod("getChunkSource"));
+                Object chunkSource = (Object) getChunkSourceMH.invokeExact(serverLevel);
 
-                // Get entityMap from ChunkMap
-                Field entityMapField = chunkMap.getClass().getDeclaredField("entityMap");
-                entityMapField.setAccessible(true);
-                Map<Integer, ?> entityMap = (Map<Integer, ?>) entityMapField.get(chunkMap);
+                if (chunkMapGetterMH == null)
+                    chunkMapGetterMH = unreflectGetterAsObject(chunkSource.getClass().getDeclaredField("chunkMap"));
+                Object chunkMap = (Object) chunkMapGetterMH.invokeExact(chunkSource);
+
+                if (entityMapGetterMH == null)
+                    entityMapGetterMH = unreflectGetterAsObject(chunkMap.getClass().getDeclaredField("entityMap"));
+                Object entityMapObj = (Object) entityMapGetterMH.invokeExact(chunkMap);
+                Map<Integer, ?> entityMap = (Map<Integer, ?>) entityMapObj;
+
+                int interval = playerUpdateInterval;
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     Object trackedEntity = entityMap.get(player.getEntityId());
                     if (trackedEntity == null)
                         continue;
 
-                    Field serverEntityField = trackedEntity.getClass().getDeclaredField("serverEntity");
-                    serverEntityField.setAccessible(true);
-                    Object serverEntity = serverEntityField.get(trackedEntity);
+                    if (serverEntityGetterMH == null)
+                        serverEntityGetterMH = unreflectGetterAsObject(trackedEntity.getClass().getDeclaredField("serverEntity"));
+                    Object serverEntity = (Object) serverEntityGetterMH.invokeExact(trackedEntity);
 
-                    Field updateIntervalField = serverEntity.getClass().getDeclaredField("updateInterval");
-                    updateIntervalField.setAccessible(true);
-                    updateIntervalField.set(serverEntity, playerUpdateInterval);
+                    if (updateIntervalSetterMH == null)
+                        updateIntervalSetterMH = unreflectIntSetter(serverEntity.getClass().getDeclaredField("updateInterval"));
+                    updateIntervalSetterMH.invokeExact(serverEntity, interval);
                 }
             }
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException e) {
-            throw new IllegalStateException("Unable to use reflection to modify updateIntervals" + e);
+        } catch (Throwable e) {
+            updateIntervalsReflectionFailed = true;
+            LOGGER.warning("Unable to use reflection to modify updateIntervals, disabling: " + e);
         }
+    }
+
+    private static MethodHandle unreflectVirtualAsObject(Method method) throws IllegalAccessException {
+        method.setAccessible(true);
+        return MethodHandles.lookup().unreflect(method)
+                .asType(MethodType.methodType(Object.class, Object.class));
+    }
+
+    private static MethodHandle unreflectGetterAsObject(Field field) throws IllegalAccessException {
+        field.setAccessible(true);
+        return MethodHandles.lookup().unreflectGetter(field)
+                .asType(MethodType.methodType(Object.class, Object.class));
+    }
+
+    private static MethodHandle unreflectIntSetter(Field field) throws IllegalAccessException {
+        field.setAccessible(true);
+        return MethodHandles.lookup().unreflectSetter(field)
+                .asType(MethodType.methodType(void.class, Object.class, int.class));
     }
 
     @KBSyncEventHandler
     public void onConfigReload(ConfigReloadEvent event) {
-        playerUpdateInterval = event.getConfigManager().getConfigWrapper().getInt("entity_tick_intervals.player", 2);
+        playerUpdateInterval = event.getConfigManager().getConfigWrapper().getInt("entity_tick_intervals.player", VANILLA_PLAYER_UPDATE_INTERVAL);
+        applyUpdateIntervalsScheduling();
     }
 
     public void restartServer() {
