@@ -44,7 +44,7 @@ dependencies {
     } else {
         compileOnly("com.github.retrooper:packetevents-spigot:2.12.2+22c9961-SNAPSHOT")
     }
-    shadeThisThing(implementation("org.incendo:cloud-paper:2.0.0-beta.14")!!)
+    shadeThisThing(implementation("org.incendo:cloud-paper:2.0.0-beta.15")!!)
     shadeThisThing(implementation("org.incendo:cloud-core:2.0.0")!!)
 
     // Required for 1.14.4 support because gson is too old to have JosnParser.parseString()
