@@ -35,8 +35,8 @@ dependencies {
     compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
     compileOnly("io.netty:netty-all:4.1.72.Final")
 
-    compileOnly("org.projectlombok:lombok:1.18.34")
-    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    compileOnly("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     shadeThisThing(implementation("org.kohsuke:github-api:1.326")!!)
     if (shadePE) {

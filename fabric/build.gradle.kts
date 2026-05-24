@@ -1,5 +1,5 @@
 plugins {
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom")
 }
 
 loom {
@@ -32,14 +32,13 @@ dependencies {
     implementation(project(":common"))
 
     minecraft("com.mojang:minecraft:${rootProject.property("minecraft_version")}")
-    mappings("net.fabricmc:yarn:${rootProject.property("yarn_mappings")}")
-    modImplementation("net.fabricmc:fabric-loader:${rootProject.property("loader_version")}")
-    modImplementation(fabricApi.module("fabric-lifecycle-events-v1", "${rootProject.property("fabric_version")}"))
-    modImplementation(fabricApi.module("fabric-events-interaction-v0", "${rootProject.property("fabric_version")}"))
+    implementation("net.fabricmc:fabric-loader:${rootProject.property("loader_version")}")
+    implementation(fabricApi.module("fabric-lifecycle-events-v1", "${rootProject.property("fabric_version")}"))
+    implementation(fabricApi.module("fabric-events-interaction-v0", "${rootProject.property("fabric_version")}"))
 
-    include(modImplementation("me.lucko:fabric-permissions-api:0.6.1")!!)
-    include(modImplementation("com.github.retrooper:packetevents-fabric:2.12.2+22c9961-SNAPSHOT")!!)
-    include(modImplementation("org.incendo:cloud-fabric:2.0.0-beta.15")!!)
+    include(implementation("me.lucko:fabric-permissions-api:0.7.0")!!)
+    include(implementation("com.github.retrooper:packetevents-fabric:2.12.1")!!)
+    include(implementation("org.incendo:cloud-fabric:2.0.0-beta.16")!!)
 
     include(implementation("org.incendo:cloud-minecraft-extras:2.0.0-beta.10")!!)
     include(implementation("org.yaml:snakeyaml:2.0")!!)
@@ -52,10 +51,11 @@ dependencies {
     //    include(implementation("org.apache.commons:commons-lang3:3.17.0")!!)
     //    include(implementation("commons-io:commons-io:2.16.1")!!)
 
+    compileOnly("com.github.retrooper:packetevents-api:2.12.1")
     compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
-    compileOnly("org.projectlombok:lombok:1.18.34")
+    compileOnly("org.projectlombok:lombok:1.18.46")
     compileOnly("io.netty:netty-all:4.1.72.Final")
-    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
 }
 
 tasks.processResources {
@@ -76,6 +76,9 @@ tasks.processResources {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
 }
