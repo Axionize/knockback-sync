@@ -3,7 +3,7 @@ package me.caseload.knockbacksync.entity;
 import me.caseload.knockbacksync.Base;
 import me.caseload.knockbacksync.ConfigWrapper;
 import me.caseload.knockbacksync.event.events.ConfigReloadEvent;
-import net.minecraft.entity.EntityType;
+import net.minecraft.world.entity.EntityType;
 import me.caseload.knockbacksync.event.KBSyncEventHandler;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,20 +20,15 @@ public class EntityTickManager {
     public static void updateTickIntervals(ConfigReloadEvent event) {
         ConfigWrapper configWrapper = event.getConfigManager().getConfigWrapper();
         updateTickIntervals(configWrapper);
-
-//        Map<String, Integer> entityIntervals = CustomUpdateIntervals.loadEntityIntervalsFromConfig();
-//        for (ServerLevel level : FabricLoaderMod.getServer().getAllLevels()) {
-//            CustomUpdateIntervals.updateIntervals(level, entityIntervals);
-//        }
     }
 
     private static void updateTickIntervals(ConfigWrapper configWrapper) {
         customTickIntervals.clear();
         for (String entityKey : configWrapper.getKeys("entity_tick_intervals")) {
             try {
-                Optional<EntityType<?>> entityType = EntityType.get(entityKey.toLowerCase());
+                Optional<EntityType<?>> entityType = EntityType.byString(entityKey.toLowerCase());
                 if (entityType.isPresent()) {
-                    int interval = configWrapper.getInt("entity_tick_intervals." + entityKey, entityType.get().getTrackTickInterval());
+                    int interval = configWrapper.getInt("entity_tick_intervals." + entityKey, entityType.get().updateInterval());
                     customTickIntervals.put(entityType.get(), interval);
                 }
             } catch (IllegalArgumentException e) {
@@ -43,6 +38,6 @@ public class EntityTickManager {
     }
 
     public static int getCustomUpdateInterval(EntityType<?> entityType) {
-        return customTickIntervals.getOrDefault(entityType, entityType.getTrackTickInterval());
+        return customTickIntervals.getOrDefault(entityType, entityType.updateInterval());
     }
 }

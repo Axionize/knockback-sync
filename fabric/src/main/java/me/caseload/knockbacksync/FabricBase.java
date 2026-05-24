@@ -1,7 +1,5 @@
 package me.caseload.knockbacksync;
 
-import com.github.retrooper.packetevents.PacketEvents;
-import io.github.retrooper.packetevents.factory.fabric.FabricPacketEventsAPI;
 import lombok.Getter;
 import me.caseload.knockbacksync.entity.EntityTickManager;
 import me.caseload.knockbacksync.listener.fabric.FabricPlayerDamageListener;

@@ -3,10 +3,11 @@ package me.caseload.knockbacksync.util;
 import me.caseload.knockbacksync.Base;
 import me.caseload.knockbacksync.ConfigWrapper;
 import me.caseload.knockbacksync.mixin.UpdateIntervalAccessor;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.world.ServerChunkLoadingManager;
-import net.minecraft.server.world.ServerChunkManager;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,11 +26,11 @@ public class CustomUpdateIntervals {
         entityIntervals.clear();
     }
 
-    public static void updateIntervals(ServerWorld level, Map<String, Integer> entityIntervals) {
-        for (Entity entity : level.iterateEntities()) {
-            String entityType = entity.getType().getRegistryEntry().getIdAsString();
+    public static void updateIntervals(ServerLevel level, Map<String, Integer> entityIntervals) {
+        for (Entity entity : level.getAllEntities()) {
+            String entityType = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
             if (entityIntervals.containsKey(entityType)) {
-                ServerChunkLoadingManager.EntityTracker serverEntity = ((ServerChunkManager) entity.getEntityWorld().getChunkManager()).chunkLoadingManager.entityTrackers.get(entity.getId());
+                ChunkMap.TrackedEntity serverEntity = ((ServerChunkCache) entity.level().getChunkSource()).chunkMap.entityMap.get(entity.getId());
                 if (serverEntity != null) {
                     ((UpdateIntervalAccessor) serverEntity).setUpdateInterval(entityIntervals.get(entityType));
                 }
