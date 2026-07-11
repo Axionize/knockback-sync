@@ -3,7 +3,7 @@ import java.io.ByteArrayOutputStream
 plugins {
     id("java")
     id("com.gradleup.shadow") version "9.2.2" apply false
-    id("net.fabricmc.fabric-loom") version "1.16.2" apply false
+    id("net.fabricmc.fabric-loom") version "1.17.2" apply false
 }
 
 fun getGitCommitHash(project: Project): String? {

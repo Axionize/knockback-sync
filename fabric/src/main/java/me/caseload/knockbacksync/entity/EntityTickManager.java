@@ -3,6 +3,8 @@ package me.caseload.knockbacksync.entity;
 import me.caseload.knockbacksync.Base;
 import me.caseload.knockbacksync.ConfigWrapper;
 import me.caseload.knockbacksync.event.events.ConfigReloadEvent;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import me.caseload.knockbacksync.event.KBSyncEventHandler;
 import java.util.HashMap;
@@ -26,7 +28,9 @@ public class EntityTickManager {
         customTickIntervals.clear();
         for (String entityKey : configWrapper.getKeys("entity_tick_intervals")) {
             try {
-                Optional<EntityType<?>> entityType = EntityType.byString(entityKey.toLowerCase());
+                Optional<EntityType<?>> entityType = BuiltInRegistries.ENTITY_TYPE.getOptional(
+                        Identifier.withDefaultNamespace(entityKey.toLowerCase())
+                );
                 if (entityType.isPresent()) {
                     int interval = configWrapper.getInt("entity_tick_intervals." + entityKey, entityType.get().updateInterval());
                     customTickIntervals.put(entityType.get(), interval);
