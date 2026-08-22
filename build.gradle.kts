@@ -74,6 +74,15 @@ allprojects {
                 includeModule("ac.grim.grimac", "GrimAPI")
             }
         }
+        maven("https://maven.grim.ac/public/snapshots") {
+            name = "GrimPublicSnapshots"
+            mavenContent {
+                snapshotsOnly()
+            }
+            content {
+                includeGroup("com.github.retrooper")
+            }
+        }
         maven("https://repo.grim.ac/snapshots")
         mavenCentral()
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")

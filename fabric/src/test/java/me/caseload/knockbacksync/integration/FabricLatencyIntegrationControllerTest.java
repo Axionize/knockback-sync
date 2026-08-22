@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FabricLatencyIntegrationControllerTest {
     @Test
-    void selectsGrimWhenLoadedAndReturnsToPacketEventsWhenConfigured() {
+    void loadsOnlyAvailableGrimAndReturnsToPacketEventsWhenConfigured() {
         FakeTarget target = new FakeTarget();
         Collection<FakeTarget> targets = Collections.singleton(target);
         LatencyService service = new LatencyService(
@@ -29,15 +29,30 @@ class FabricLatencyIntegrationControllerTest {
                 () -> targets
         );
         AtomicReference<LatencyProviderMode> mode = new AtomicReference<>(LatencyProviderMode.AUTO);
-        AtomicBoolean grimLoaded = new AtomicBoolean(true);
+        AtomicBoolean grimLoaded = new AtomicBoolean(false);
+        AtomicInteger providerCreations = new AtomicInteger();
         FakeProvider provider = new FakeProvider(target.id);
 
         FabricLatencyIntegrationController controller = new FabricLatencyIntegrationController(
-                mode::get, service, Logger.getAnonymousLogger(), grimLoaded::get, () -> provider
+                mode::get,
+                service,
+                Logger.getAnonymousLogger(),
+                grimLoaded::get,
+                () -> {
+                    providerCreations.incrementAndGet();
+                    return provider;
+                }
         );
         controller.enable();
 
+        assertEquals(0, providerCreations.get(), "absent Grim must not load the optional provider");
+        assertFalse(target.external);
+
+        grimLoaded.set(true);
+        controller.reconfigure();
+
         AtomicInteger syntheticSends = new AtomicInteger();
+        assertEquals(1, providerCreations.get());
         assertTrue(target.external);
         assertFalse(service.runSyntheticPingIfRequired(target, syntheticSends::incrementAndGet));
         assertEquals(0, syntheticSends.get());
@@ -49,32 +64,6 @@ class FabricLatencyIntegrationControllerTest {
         assertFalse(target.external);
         assertTrue(service.runSyntheticPingIfRequired(target, syntheticSends::incrementAndGet));
         assertEquals(1, syntheticSends.get());
-    }
-
-    @Test
-    void autoDoesNotLoadTheOptionalProviderWhenGrimIsAbsent() {
-        FakeTarget target = new FakeTarget();
-        Collection<FakeTarget> targets = Collections.singleton(target);
-        LatencyService service = new LatencyService(
-                playerId -> target.id.equals(playerId) ? target : null,
-                () -> targets
-        );
-        AtomicInteger providerCreations = new AtomicInteger();
-        FabricLatencyIntegrationController controller = new FabricLatencyIntegrationController(
-                () -> LatencyProviderMode.AUTO,
-                service,
-                Logger.getAnonymousLogger(),
-                () -> false,
-                () -> {
-                    providerCreations.incrementAndGet();
-                    return LatencyProvider.PACKET_EVENTS;
-                }
-        );
-
-        controller.enable();
-
-        assertEquals(0, providerCreations.get());
-        assertFalse(target.external);
     }
 
     private static final class FakeProvider implements LatencyProvider {
