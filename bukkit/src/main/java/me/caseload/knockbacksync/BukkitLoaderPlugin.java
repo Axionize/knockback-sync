@@ -19,6 +19,7 @@ public final class BukkitLoaderPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        core.disable();
         PacketEvents.getAPI().terminate();
     }
 }

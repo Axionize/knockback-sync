@@ -7,14 +7,14 @@ public class JitterCalculator {
     private final int SAMPLE_SIZE = 15;
     private final Queue<Long> pings = new LinkedList<>();
 
-    public void addPing(long pingTime) {
+    public synchronized void addPing(long pingTime) {
         pings.offer(pingTime);
         if (pings.size() > SAMPLE_SIZE) {
             pings.poll();
         }
     }
 
-    public double calculateJitter() {
+    public synchronized double calculateJitter() {
         if (pings.size() < 2) return 0;
 
         List<Long> sortedPings = new ArrayList<>(pings);
@@ -54,5 +54,9 @@ public class JitterCalculator {
 
         // You can return different jitter metrics based on your needs
         return stdDev / 1_000_000.0; // or meanJitter, or both
+    }
+
+    public synchronized void reset() {
+        pings.clear();
     }
 }

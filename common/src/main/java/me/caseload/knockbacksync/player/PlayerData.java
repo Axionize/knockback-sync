@@ -20,6 +20,7 @@ import me.caseload.knockbacksync.command.subcommand.ToggleOffGroundSubcommand;
 import me.caseload.knockbacksync.event.KBSyncEventHandler;
 import me.caseload.knockbacksync.event.events.ConfigReloadEvent;
 import me.caseload.knockbacksync.event.events.ToggleOnOffEvent;
+import me.caseload.knockbacksync.latency.LatencyTarget;
 import me.caseload.knockbacksync.manager.CombatManager;
 import me.caseload.knockbacksync.manager.ConfigManager;
 import me.caseload.knockbacksync.scheduler.AbstractTaskHandle;
@@ -39,7 +40,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 @Getter
-public class PlayerData {
+public class PlayerData implements LatencyTarget {
 
     // Please read the GitHub FAQ before adjusting.
     private static final short MAIN_THREAD_TRANSACTION_ID = 31407;
@@ -77,11 +78,10 @@ public class PlayerData {
     private final UUID uuid;
     @NotNull private final Random random = new Random();
     public long lastKeepAliveID = 0;
-    @Getter private final JitterCalculator jitterCalculator = new JitterCalculator();
-    @Setter private double jitter;
+    private final PingSampleState pingSamples = new PingSampleState();
+    private volatile boolean externalLatencyActive;
     @Nullable private AbstractTaskHandle combatTask;
     @NotNull private final Object combatTaskLock = new Object(); // Lock object for synchronization
-    @Nullable @Setter private Double ping, previousPing;
     @Nullable @Setter private Double verticalVelocity;
     @Nullable @Setter private Integer lastDamageTicks;
     @Setter private double gravityAttribute = 0.08;
@@ -96,11 +96,56 @@ public class PlayerData {
     }
 
     public double getNotNullPing() {
-        return ping != null ? ping : platformPlayer.getPing();
+        return pingSamples.getPingOr(platformPlayer.getPing());
     }
 
     public double getNotNullPreviousPing() {
-        return previousPing != null ? previousPing : platformPlayer.getPing();
+        return pingSamples.getPreviousPingOr(platformPlayer.getPing());
+    }
+
+    @Nullable
+    public Double getPing() {
+        return pingSamples.getPing();
+    }
+
+    @Nullable
+    public Double getPreviousPing() {
+        return pingSamples.getPreviousPing();
+    }
+
+    public double getJitter() {
+        return pingSamples.getJitter();
+    }
+
+    public JitterCalculator getJitterCalculator() {
+        return pingSamples.getJitterCalculator();
+    }
+
+    @Override
+    public UUID getUniqueId() {
+        return uuid;
+    }
+
+    @Override
+    public synchronized boolean setExternalLatencyActive(boolean active) {
+        if (externalLatencyActive == active) {
+            return false;
+        }
+
+        externalLatencyActive = active;
+        transactionsSent.clear();
+        keepaliveMap.clear();
+        pingSamples.reset();
+        return true;
+    }
+
+    public boolean isExternalLatencyActive() {
+        return externalLatencyActive;
+    }
+
+    @Override
+    public void recordPingSample(double pingMillis) {
+        pingSamples.record(pingMillis);
     }
 
     /**
@@ -133,19 +178,24 @@ public class PlayerData {
     public void sendPing(boolean async) {
         if (user == null || user.getEncoderState() != ConnectionState.PLAY) return;
 
+        Runnable guardedSend = () -> Base.INSTANCE.getLatencyService()
+                .runSyntheticPingIfRequired(this, () -> sendSyntheticPing(async));
+
+        if (async) {
+            // Re-check provider ownership on the player's event loop immediately
+            // before writing, so a Grim join event cannot race a queued KBS ping.
+            ChannelHelper.runInEventLoop(user.getChannel(), guardedSend);
+        } else {
+            guardedSend.run();
+        }
+    }
+
+    private void sendSyntheticPing(boolean async) {
        switch (pingStrategy) {
            case KEEPALIVE:
                long keepAliveID = async ? NETTY_THREAD_TRANSACTION_ID : MAIN_THREAD_TRANSACTION_ID;
-               if (async) {
-                   ChannelHelper.runInEventLoop(user.getChannel(), () -> {
-                       // We call sendPacket instead of writePacket because it flushes immediately
-                       // Making our time measurement more accurate since we don't call, System.nanoTime(), wait until flush
-                       // And then actually send packet
-                       user.sendPacket(new WrapperPlayServerKeepAlive(keepAliveID));
-                   });
-               } else {
-                   user.sendPacket(new WrapperPlayServerKeepAlive(keepAliveID));
-               }
+               // sendPacket flushes immediately, keeping the timestamp close to the write.
+               user.sendPacket(new WrapperPlayServerKeepAlive(keepAliveID));
                break;
            case TRANSACTION:
                PacketWrapper<?> packet;
@@ -156,13 +206,7 @@ public class PlayerData {
                    packet = new WrapperPlayServerWindowConfirmation((byte) 0, pingTransactionID, false);
                }
 
-               if (async) {
-                   ChannelHelper.runInEventLoop(user.getChannel(), () -> {
-                       user.writePacket(packet);
-                   });
-               } else {
-                   user.writePacket(packet);
-               }
+               user.writePacket(packet);
                break;
        }
     }

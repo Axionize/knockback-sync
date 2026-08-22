@@ -14,6 +14,7 @@ import me.caseload.knockbacksync.event.Event;
 import me.caseload.knockbacksync.event.EventBus;
 import me.caseload.knockbacksync.event.OptimizedEventBus;
 import me.caseload.knockbacksync.listener.packetevents.*;
+import me.caseload.knockbacksync.latency.LatencyService;
 import me.caseload.knockbacksync.manager.ConfigManager;
 import me.caseload.knockbacksync.permission.PermissionChecker;
 import me.caseload.knockbacksync.scheduler.SchedulerAdapter;
@@ -51,6 +52,7 @@ public abstract class Base {
     @Getter protected ConfigManager configManager;
     @Getter protected CommandManager<Sender> commandManager;
     @Getter protected final EventBus eventBus = new OptimizedEventBus();
+    @Getter protected final LatencyService latencyService = new LatencyService();
 
     @Getter
     protected AbstractPlayerSelectorParser<Sender> playerSelectorParser;
@@ -105,6 +107,10 @@ public abstract class Base {
     }
 
     public abstract void initializeScheduler();
+
+    public void disable() {
+        latencyService.deactivate();
+    }
 
     public void initializePacketEvents() {
         PacketEvents.getAPI().getSettings()
@@ -291,5 +297,4 @@ public abstract class Base {
 
     public abstract boolean hasRestartScript();
 }
-
 

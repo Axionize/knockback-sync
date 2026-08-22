@@ -35,6 +35,7 @@ public class PingSendListener extends PacketListenerAbstract {
         if (playerUUID == null) return;
         PlayerData playerData = PlayerDataManager.getPlayerData(event.getUser());
         if (playerData == null) return;
+        if (Base.INSTANCE.getLatencyService().shouldSuppressSyntheticPing(playerData)) return;
 
         if (playerData.pingStrategy == PingStrategy.KEEPALIVE && packetType.equals(PacketType.Play.Server.KEEP_ALIVE)) {
             WrapperPlayServerKeepAlive keepAlive = new WrapperPlayServerKeepAlive(event);

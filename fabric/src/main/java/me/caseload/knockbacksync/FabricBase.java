@@ -2,6 +2,9 @@ package me.caseload.knockbacksync;
 
 import lombok.Getter;
 import me.caseload.knockbacksync.entity.EntityTickManager;
+import me.caseload.knockbacksync.event.KBSyncEventHandler;
+import me.caseload.knockbacksync.event.events.ConfigReloadEvent;
+import me.caseload.knockbacksync.integration.FabricLatencyIntegrationController;
 import me.caseload.knockbacksync.listener.fabric.FabricPlayerDamageListener;
 import me.caseload.knockbacksync.listener.fabric.FabricPlayerKnockbackListener;
 import me.caseload.knockbacksync.listener.fabric.FabricTickRateChangeListener;
@@ -35,10 +38,14 @@ public class FabricBase extends Base {
     private final FabricPermissionChecker permissionChecker = new FabricPermissionChecker();
     @Getter
     private final FabricSenderFactory fabricSenderFactory = new FabricSenderFactory(this);
+    private final FabricLatencyIntegrationController latencyIntegrationController;
     private float tickRate = 20.0F;
 
     public FabricBase() {
         super.configManager = new ConfigManager();
+        this.latencyIntegrationController = new FabricLatencyIntegrationController(
+                super.configManager, super.latencyService, logger
+        );
         super.playerSelectorParser = new FabricPlayerSelectorParser<>();
         super.commandManager = new FabricServerCommandManager<>(
                 ExecutionCoordinator.simpleCoordinator(),
@@ -73,6 +80,22 @@ public class FabricBase extends Base {
     @Override
     public void enable() {
         super.enable();
+        super.eventBus.registerListeners(this);
+    }
+
+    public void enableLatencyIntegration() {
+        latencyIntegrationController.enable();
+    }
+
+    @Override
+    public void disable() {
+        latencyIntegrationController.disable();
+        super.disable();
+    }
+
+    @KBSyncEventHandler
+    public void onConfigReload(ConfigReloadEvent event) {
+        latencyIntegrationController.reconfigure();
     }
 
     @Override

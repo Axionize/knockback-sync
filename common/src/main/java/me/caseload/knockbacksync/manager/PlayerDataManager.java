@@ -9,6 +9,8 @@ import me.caseload.knockbacksync.util.GeyserUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,9 +18,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerDataManager {
 
     private static final Map<User, PlayerData> playerDataMap = new ConcurrentHashMap<>();
+    private static final Map<UUID, PlayerData> playerDataByUuid = new ConcurrentHashMap<>();
 
     public static @Nullable PlayerData getPlayerData(@NotNull User user) {
         return playerDataMap.get(user);
+    }
+
+    public static @Nullable PlayerData getPlayerData(@NotNull UUID uuid) {
+        return playerDataByUuid.get(uuid);
+    }
+
+    public static Collection<PlayerData> getAllPlayerData() {
+        return new ArrayList<>(playerDataByUuid.values());
     }
 
     public static void addPlayerData(@Nullable User user, @Nullable PlatformPlayer platformPlayer) {
@@ -28,15 +39,23 @@ public class PlayerDataManager {
 
         if (!shouldExempt(platformPlayer.getUUID())) {
             PlayerData playerData = new PlayerData(user, platformPlayer);
-            playerDataMap.put(user, playerData);
+            PlayerData previous = playerDataMap.put(user, playerData);
+            if (previous != null) {
+                playerDataByUuid.remove(previous.getUniqueId(), previous);
+                Base.INSTANCE.getEventBus().unregisterListeners(previous);
+            }
+            playerDataByUuid.put(playerData.getUniqueId(), playerData);
             Base.INSTANCE.getEventBus().registerListeners(playerData);
+            Base.INSTANCE.getLatencyService().synchronizePlayer(playerData);
         }
     }
 
     public static void removePlayerData(@NotNull User user) {
         PlayerData playerData = playerDataMap.remove(user);
-        if (playerData != null)
+        if (playerData != null) {
+            playerDataByUuid.remove(playerData.getUniqueId(), playerData);
             Base.INSTANCE.getEventBus().unregisterListeners(playerData);
+        }
     }
 
     public static boolean containsPlayerData(@NotNull User user) {

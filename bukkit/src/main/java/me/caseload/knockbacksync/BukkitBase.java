@@ -6,6 +6,7 @@ import com.github.retrooper.packetevents.protocol.world.Location;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import me.caseload.knockbacksync.event.events.ConfigReloadEvent;
 import me.caseload.knockbacksync.event.KBSyncEventHandler;
+import me.caseload.knockbacksync.integration.BukkitLatencyIntegrationController;
 import me.caseload.knockbacksync.listener.bukkit.*;
 import me.caseload.knockbacksync.manager.ConfigManager;
 import me.caseload.knockbacksync.permission.PermissionChecker;
@@ -52,6 +53,7 @@ public class BukkitBase extends Base {
     private final JavaPlugin plugin;
     private final BukkitSenderFactory bukkitSenderFactory = new BukkitSenderFactory(this);
     private final PluginPermissionChecker permissionChecker = new PluginPermissionChecker();
+    private final BukkitLatencyIntegrationController latencyIntegrationController;
 
     private static final int VANILLA_PLAYER_UPDATE_INTERVAL = 2;
 
@@ -72,6 +74,9 @@ public class BukkitBase extends Base {
     public BukkitBase(JavaPlugin plugin) {
         this.plugin = plugin;
         super.configManager = new ConfigManager();
+        this.latencyIntegrationController = new BukkitLatencyIntegrationController(
+                plugin, super.configManager, super.latencyService
+        );
         super.playerSelectorParser = new BukkitPlayerSelectorParser<>();
         super.statsManager = new BukkitStatsManager(plugin);
         super.platformServer = new BukkitServer();
@@ -123,9 +128,23 @@ public class BukkitBase extends Base {
 
     @Override
     public void enable() {
+        // Select Grim before ConfigManager can schedule its zero-delay ping task.
+        latencyIntegrationController.enable();
         super.enable();
+        // Re-read the migrated/current config without exposing a provider gap.
+        latencyIntegrationController.reconfigure();
         super.eventBus.registerListeners(this);
         applyUpdateIntervalsScheduling();
+    }
+
+    @Override
+    public void disable() {
+        latencyIntegrationController.disable();
+        if (updateIntervalsTask != null) {
+            updateIntervalsTask.cancel();
+            updateIntervalsTask = null;
+        }
+        super.disable();
     }
 
     private void applyUpdateIntervalsScheduling() {
@@ -293,6 +312,7 @@ public class BukkitBase extends Base {
     public void onConfigReload(ConfigReloadEvent event) {
         playerUpdateInterval = event.getConfigManager().getConfigWrapper().getInt("entity_tick_intervals.player", VANILLA_PLAYER_UPDATE_INTERVAL);
         BukkitPlayerKnockbackListener.recursionGuardEnabled = event.getConfigManager().getConfigWrapper().getBoolean("prevent_velocity_event_recursion", false);
+        latencyIntegrationController.reconfigure();
         applyUpdateIntervalsScheduling();
     }
 
