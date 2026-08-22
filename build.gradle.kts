@@ -61,6 +61,19 @@ allprojects {
 
     repositories {
 //        mavenLocal()
+        ivy {
+            name = "GrimApiGitHubReleases"
+            url = uri("https://github.com/GrimAnticheat/GrimAPI/releases/download")
+            patternLayout {
+                artifact("v[revision]/[artifact]-[revision].[ext]")
+            }
+            metadataSources {
+                artifact()
+            }
+            content {
+                includeModule("ac.grim.grimac", "GrimAPI")
+            }
+        }
         maven("https://repo.grim.ac/snapshots")
         mavenCentral()
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")

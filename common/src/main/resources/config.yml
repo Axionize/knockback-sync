@@ -3,7 +3,7 @@
 #########################################
 
 # Do not modify!
-config_version: 7
+config_version: 8
 
 # Plugin enabled state
 # Toggleable using /knockbacksync toggle
@@ -24,6 +24,12 @@ runnable:
   enabled: true       # Runnable enabled state
   interval: 5         # The interval in ticks between sending out pings to players
   combat_timer: 30    # The timer in ticks before being considered out of combat
+
+# Bukkit latency source. AUTO uses Grim's transaction latency for players tracked by GrimAC,
+# and otherwise keeps KnockbackSync's PacketEvents measurements. GRIM has the same per-player
+# fallback but warns when GrimAC is unavailable. PACKET_EVENTS disables the Grim integration.
+latency:
+  provider: "AUTO" # OPTIONS: AUTO, GRIM, PACKET_EVENTS
 
 # The minimum change in ping required for it to be considered a lag spike.
 # If the difference between the latest and previous ping is greater than or equal to

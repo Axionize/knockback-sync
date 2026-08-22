@@ -60,6 +60,7 @@ public class PingReceiveListener extends PacketListenerAbstract {
         }
 
         if (!Base.INSTANCE.getConfigManager().isToggled()) return;
+        if (Base.INSTANCE.getLatencyService().shouldSuppressSyntheticPing(playerData)) return;
 
         Pair<T, Long> data = null;
         int cleared = 0;
@@ -78,12 +79,7 @@ public class PingReceiveListener extends PacketListenerAbstract {
             long pingNanos = (System.nanoTime() - data.getSecond());
             double diffMillisDouble = pingNanos / 1_000_000.0;
 
-            playerData.setPreviousPing(playerData.getPing());
-            playerData.setPing(diffMillisDouble);
-
-            playerData.getJitterCalculator().addPing(pingNanos);
-            double jitter = playerData.getJitterCalculator().calculateJitter();
-            playerData.setJitter(jitter);
+            playerData.recordPingSample(diffMillisDouble);
 
         } while (data.getFirst().longValue() != id);
 

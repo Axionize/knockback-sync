@@ -26,6 +26,13 @@ dependencies {
 
     implementation("org.incendo:cloud-core:2.0.0")
     implementation("org.incendo:cloud-minecraft-extras:2.0.0-beta.10")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 buildConfig {

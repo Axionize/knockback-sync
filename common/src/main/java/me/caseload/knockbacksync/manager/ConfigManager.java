@@ -6,6 +6,7 @@ import me.caseload.knockbacksync.ConfigWrapper;
 import me.caseload.knockbacksync.Base;
 import me.caseload.knockbacksync.Platform;
 import me.caseload.knockbacksync.config.YamlConfiguration;
+import me.caseload.knockbacksync.latency.LatencyProviderMode;
 import me.caseload.knockbacksync.runnable.PingRunnable;
 import me.caseload.knockbacksync.scheduler.AbstractTaskHandle;
 
@@ -19,7 +20,7 @@ import java.util.Map;
 @Setter
 public class ConfigManager {
 
-    public static final long CONFIG_VERSION = 7;
+    public static final long CONFIG_VERSION = 8;
 
     private boolean toggled;
     private boolean runnableEnabled;
@@ -30,6 +31,7 @@ public class ConfigManager {
     private long runnableInterval;
     private long combatTimer;
     private long spikeThreshold;
+    private LatencyProviderMode latencyProviderMode;
 
     private String enableMessage;
     private String disableMessage;
@@ -87,9 +89,10 @@ public class ConfigManager {
             reloadConfig();
         }
 
-        ConfigWrapper configWrapper = getConfigWrapper(); // Use cached ConfigWrapper
-
         updateConfig();
+
+        // updateConfig may replace and reload the file, so fetch the current wrapper afterwards.
+        ConfigWrapper configWrapper = getConfigWrapper();
 
         toggled = configWrapper.getBoolean("enabled", true);
 
@@ -118,6 +121,9 @@ public class ConfigManager {
         autoUpdate = configWrapper.getBoolean("auto_update", true);
         combatTimer = configWrapper.getLong("runnable.timer", 30L);
         spikeThreshold = configWrapper.getLong("spike_threshold", 20L);
+        latencyProviderMode = LatencyProviderMode.fromConfig(
+                configWrapper.getString("latency.provider", LatencyProviderMode.AUTO.name())
+        );
         enableMessage = configWrapper.getString("messages.toggle.global.enable", "&aSuccessfully enabled KnockbackSync.");
         disableMessage = configWrapper.getString("messages.toggle.global.disable", "&cSuccessfully disabled KnockbackSync.");
         playerEnableMessage = configWrapper.getString("messages.toggle.player.enable", "&aSuccessfully enabled KnockbackSync for %player%.");

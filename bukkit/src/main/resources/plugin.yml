@@ -6,6 +6,7 @@ authors: [ Caseload, Axionize ]
 description: Synchronizes player knockback for smoother gameplay.
 folia-supported: true
 depends: ${depends}
+softdepend: [ GrimAC ]
 permissions:
   knockbacksync.update:
     default: op

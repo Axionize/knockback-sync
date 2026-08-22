@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.attributes.java.TargetJvmVersion
 
 plugins {
     id("com.gradleup.shadow")
@@ -15,8 +16,7 @@ val shadeThisThing: Configuration by configurations.creating {
     isTransitive = true
 }
 
-// TODO migrate to only including sources sets for compile, test and javadoc tasks
-tasks.withType<JavaCompile>().configureEach {
+tasks.named<JavaCompile>("compileJava") {
     source(project(":common").sourceSets.main.get().allSource)
 }
 
@@ -24,16 +24,20 @@ tasks.withType<Javadoc>().configureEach {
     source(project(":common").sourceSets.main.get().allJava)
 }
 
-tasks.named<JavaCompile>("compileTestJava") {
-    exclude("**/*")
-}
-
 dependencies {
     implementation(project(":common"))
 
     compileOnly("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
+    compileOnly("com.mojang:brigadier:1.3.10")
     compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
     compileOnly("io.netty:netty-all:4.1.72.Final")
+    compileOnly("ac.grim.grimac:GrimAPI:1.6.0.10") {
+        isTransitive = false
+        // Grim requires Java 17; KBS itself continues to emit Java 8 bytecode.
+        attributes {
+            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+        }
+    }
 
     compileOnly("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
@@ -49,6 +53,20 @@ dependencies {
 
     // Required for 1.14.4 support because gson is too old to have JosnParser.parseString()
     shadeThisThing(implementation("com.google.code.gson:gson:2.11.0")!!)
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.2")
+    testImplementation("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
+    testImplementation("ac.grim.grimac:GrimAPI:1.6.0.10") {
+        isTransitive = false
+        attributes {
+            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+        }
+    }
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.withType<ShadowJar> {
