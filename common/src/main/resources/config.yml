@@ -25,7 +25,7 @@ runnable:
   interval: 5         # The interval in ticks between sending out pings to players
   combat_timer: 30    # The timer in ticks before being considered out of combat
 
-# Bukkit latency source. AUTO uses Grim's transaction latency for players tracked by GrimAC,
+# Latency source. AUTO uses Grim's transaction latency for players tracked by GrimAC,
 # and otherwise keeps KnockbackSync's PacketEvents measurements. GRIM has the same per-player
 # fallback but warns when GrimAC is unavailable. PACKET_EVENTS disables the Grim integration.
 latency:

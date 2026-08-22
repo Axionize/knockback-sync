@@ -42,19 +42,19 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
 
-    shadeThisThing(implementation("org.kohsuke:github-api:1.326")!!)
+    shadeThisThing(implementation("org.kohsuke:github-api:1.330")!!)
     if (shadePE) {
         shadeThisThing(implementation("com.github.retrooper:packetevents-spigot:2.13.0")!!)
     } else {
         compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
     }
-    shadeThisThing(implementation("org.incendo:cloud-paper:2.0.0-beta.17")!!)
-    shadeThisThing(implementation("org.incendo:cloud-core:2.0.0")!!)
+    shadeThisThing(implementation("org.incendo:cloud-paper:2.0.0")!!)
+    shadeThisThing(implementation("org.incendo:cloud-core:2.1.0")!!)
 
-    // Required for 1.14.4 support because gson is too old to have JosnParser.parseString()
-    shadeThisThing(implementation("com.google.code.gson:gson:2.11.0")!!)
+    // Required for 1.14.4 support because gson is too old to have JsonParser.parseString().
+    shadeThisThing(implementation("com.google.code.gson:gson:2.14.0")!!)
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.14.4")
     testImplementation("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
     testImplementation("ac.grim.grimac:GrimAPI:1.6.0.10") {
         isTransitive = false

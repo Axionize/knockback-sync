@@ -9,7 +9,7 @@ import net.minecraft.server.MinecraftServer;
 
 public class FabricLoaderMod implements PreLaunchEntrypoint, ModInitializer {
 
-    private final Base core = new FabricBase();
+    private final FabricBase core = new FabricBase();
 
     public static MinecraftServer getServer() {
         return (MinecraftServer) FabricLoader.getInstance().getGameInstance();
@@ -25,8 +25,12 @@ public class FabricLoaderMod implements PreLaunchEntrypoint, ModInitializer {
     public void onInitialize() {
         ensureServer();
         core.enable();
+        // All mod initializers have completed before this fires, so Grim's API
+        // provider is available regardless of Fabric entrypoint ordering.
+        ServerLifecycleEvents.SERVER_STARTING.register((server) -> core.enableLatencyIntegration());
         ServerLifecycleEvents.SERVER_STOPPING.register((server) -> {
-            core.scheduler.shutdown();
+            core.disable();
+            core.getScheduler().shutdown();
             // bstats removal
 //            core.statsManager.getMetrics().shutdown();
         });

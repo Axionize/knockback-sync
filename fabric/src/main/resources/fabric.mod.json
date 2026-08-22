@@ -27,5 +27,8 @@
     "minecraft": "~${minecraft_version}",
     "packetevents": "*"
   },
+  "suggests": {
+    "grimac": "*"
+  },
   "accessWidener": "knockbacksync.accesswidener"
 }

@@ -40,10 +40,12 @@ If you find your platform is lacking events, take a look at how the PlayerVeloci
 `GrimTransactionReceivedEvent` through the production Grim provider and verifies that the sample reaches KBS,
 that a tracked user receives no KBS synthetic ping, that the platform ping remains the fallback before Grim's
 first sample, and that join, quit, reload/replacement, and disable/unsubscribe behavior is preserved. This proves
-the Grim API event-to-KBS state path without requiring a Minecraft client.
+the shared Bukkit/Fabric Grim API event-to-KBS state path without requiring a Minecraft client.
+`FabricLatencyIntegrationControllerTest` separately verifies AUTO selection, optional-provider absence, shutdown,
+and the no-synthetic-send invariant at the Fabric activation boundary.
 
 The harness cannot prove plugin classloader linkage on a particular server build or observe the final Netty packet
-stream. Run this Hoplite dev-server smoke test before deployment:
+stream. Run this Hoplite Bukkit dev-server smoke test before deployment:
 
 1. Build with `./gradlew clean build`, stop Hoplite, remove the old KnockbackSync jar, and copy
    `bukkit/build/libs/knockbacksync-bukkit-*.jar` into `plugins/`. Remove the old per-server Grim packet exception.
@@ -59,3 +61,17 @@ stream. Run this Hoplite dev-server smoke test before deployment:
    replacement and both KBS/Grim player lifecycles.
 7. On a separate clean dev-server copy, remove GrimAC, start the same KBS jar, and repeat the combat and
    `/knockbacksync ping` check. KBS must load without Grim classes and must resume PacketEvents measurements.
+
+For Fabric, use the matching public Grim `2.0` Fabric build and run this equivalent smoke test:
+
+1. Build with `./gradlew clean build`, stop the Fabric 26.2 server, and copy the generated KBS Fabric jar and the
+   matching Grim Fabric jar into `mods/`. Remove any old per-server Grim packet exception.
+2. Leave `latency.provider: "AUTO"` in `config/config.yml`, start the server, and confirm KBS logs
+   `Latency provider: Grim transaction ping (PacketEvents fallback for untracked players)` with no linkage errors.
+3. Join with a non-exempt player, start `/grim debug packetlog <player> --all`, and have another player hit them
+   repeatedly for at least five seconds. `/knockbacksync ping <player>` must report a real ping and changing jitter.
+4. Stop packet logging. In Grim's reported packet log under `config/GrimAC/packetlogs/`,
+   `rg '31407|31408' <file>` must return no matches and no new `BadPacketsO` alert may appear.
+5. Run `/knockbacksync reload`, repeat steps 3-4, then relog and repeat once more.
+6. On a separate clean server copy, remove Grim, start the same KBS jar, and repeat the combat/ping check. KBS must
+   load without Grim API classes and resume its PacketEvents measurement path.
