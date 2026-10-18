@@ -198,7 +198,7 @@ jobs:
             fabric
 
           game-versions: |
-            26.2
+            26.3
 
           dependencies: |
             fabric-api

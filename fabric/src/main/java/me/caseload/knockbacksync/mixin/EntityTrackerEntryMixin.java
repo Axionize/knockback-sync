@@ -21,7 +21,7 @@ public class EntityTrackerEntryMixin {
 
     @Inject(method = "sendChanges",
             at = @At(value = "FIELD",
-                    target = "Lnet/minecraft/world/entity/Entity;hurtMarked:Z",
+                    target = "Lnet/minecraft/world/entity/Entity;syncVelocity:Z",
                     opcode = Opcodes.PUTFIELD),
             cancellable = true)
     private void onKnockbackSync(CallbackInfo ci) {

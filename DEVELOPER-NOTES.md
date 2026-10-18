@@ -13,7 +13,7 @@
       - Commands use incendio's `cloud` command system. All you have to do to add platform support is to create a CommandManager and call register(). 
     - Handling Events
     - Gathering Statistics
-- `fabric` contains code for the latest supported Fabric version (currently Minecraft 26.2)
+- `fabric` contains code for the latest supported Fabric version (currently Minecraft 26.3)
 - `bukkit` contains bukkit-specific code
 
 If you want to add support for a new platform, simply make a new submodule and implement the interfaces for.
@@ -52,9 +52,9 @@ linkage and live sample propagation. The absence of IDs in the ordinary server l
 the production send-gate invariant is proved by the API-faithful harness. A scripted HeadlessMC combat attempt was
 not counted as evidence because the 26.2 key injector recursed while simulating the attack key.
 
-KBS is pinned to the PacketEvents snapshot used by the current public Grim 2.0 source
-(`2.13.1+4d40422-SNAPSHOT`), not upstream PacketEvents. The live profile's installed Grim build supplied the newer
-Grim-fork snapshot `2.13.1+8187e23-SNAPSHOT`; Fabric Loader correctly selected that single runtime copy.
+That 26.2 profile used the PacketEvents snapshot available at the time
+(`2.13.1+4d40422-SNAPSHOT`). The 26.3 build is pinned to the Grim fork
+`2.14.1+c11273e-SNAPSHOT`, whose Fabric metadata includes the `mc263` implementation.
 
 Run this Hoplite Bukkit dev-server smoke test before deployment:
 
@@ -75,7 +75,7 @@ Run this Hoplite Bukkit dev-server smoke test before deployment:
 
 For Fabric, use the matching public Grim `2.0` Fabric build and run this equivalent smoke test:
 
-1. Build with `./gradlew clean build`, stop the Fabric 26.2 server, and copy the generated KBS Fabric jar and the
+1. Build with `./gradlew clean build`, stop the Fabric 26.3 server, and copy the generated KBS Fabric jar and the
    matching Grim Fabric jar into `mods/`. Remove any old per-server Grim packet exception.
 2. Leave `latency.provider: "AUTO"` in `config/config.yml`, start the server, and confirm KBS logs
    `Latency provider: Grim transaction ping (PacketEvents fallback for untracked players)` with no linkage errors.

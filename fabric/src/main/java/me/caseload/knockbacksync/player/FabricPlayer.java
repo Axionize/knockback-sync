@@ -120,13 +120,13 @@ public class FabricPlayer implements PlatformPlayer {
 
     @Override
     public @Nullable Integer getNoDamageTicks() {
-        return fabricPlayer.invulnerableTime;
+        return fabricPlayer.getInvulnerableTime();
     }
 
     @Override
     public void setVelocity(Vector3d adjustedVelocity) {
         fabricPlayer.setDeltaMovement(adjustedVelocity.x, adjustedVelocity.y, adjustedVelocity.z);
-        fabricPlayer.hurtMarked = true;
+        fabricPlayer.syncVelocity = true;
     }
 
     @Override

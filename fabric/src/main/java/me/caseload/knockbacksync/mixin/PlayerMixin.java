@@ -23,7 +23,7 @@ public class PlayerMixin {
     private void onKnockback(Entity target, float strength, Vec3 playerTargetVelocity,
                              DamageSource damageSource, float damage, boolean blocked,
                              CallbackInfo ci) {
-        if (target instanceof ServerPlayer serverPlayer && target.hurtMarked) {
+        if (target instanceof ServerPlayer serverPlayer && target.syncVelocity) {
 
             Vec3 proposedVelocity = target.getDeltaMovement();
 
@@ -37,7 +37,7 @@ public class PlayerMixin {
             if (result == InteractionResult.SUCCESS) {
                 serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(target));
 
-                target.hurtMarked = false;
+                target.syncVelocity = false;
                 target.setDeltaMovement(playerTargetVelocity);
 
                 ci.cancel();
